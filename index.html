@@ -76,19 +76,6 @@
                         Masuk Sistem
                     </button>
                 </form>
-
-                <!-- Quick Demo Login Helpers -->
-                <div class="mt-6 pt-4 border-t border-slate-200">
-                    <p class="text-xs text-slate-500 text-center mb-2 font-medium">Uji Coba Mode Demo:</p>
-                    <div class="grid grid-cols-2 gap-2">
-                        <button onclick="fillDemoLogin('admin', '123')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-2 rounded-lg font-medium transition">
-                            <i class="fa-solid fa-user-gear mr-1"></i> Mode Admin
-                        </button>
-                        <button onclick="fillDemoLogin('petugas', '123')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs py-2 rounded-lg font-medium transition">
-                            <i class="fa-solid fa-id-card-clip mr-1"></i> Mode Petugas
-                        </button>
-                    </div>
-                </div>
             </div>
         </section>
 
@@ -298,37 +285,6 @@
                             </table>
                         </div>
                     </div>
-                </div>
-            </div>
-
-            <!-- TAB 5: PANDUAN PEMASANGAN & GOOGLE APPS SCRIPT -->
-            <div id="tabPanduan" class="tab-content hidden space-y-6">
-                <!-- API URL Settings Box -->
-                <div class="bg-indigo-50 border border-indigo-200 p-5 rounded-2xl">
-                    <h3 class="font-bold text-indigo-900 text-base mb-2 flex items-center gap-2">
-                        <i class="fa-solid fa-link"></i> Pengaturan Koneksi API Google Apps Script
-                    </h3>
-                    <p class="text-xs text-indigo-700 mb-3">
-                        Aplikasi saat ini berjalan menggunakan <b>Mode Demo LocalStorage</b>. Untuk menghubungkan dengan Google Sheets asli, masukkan URL Web App Google Apps Script Anda di bawah ini:
-                    </p>
-                    <div class="flex gap-2">
-                        <input type="text" id="apiEndpointUrl" placeholder="https://script.google.com/macros/s/AKfycbw02eGYX4tF563s5pTvZ8YGEKduDv8r05PvzEnbyzldxvUYOHEmiBwNkHkXItbHLiZx/exec" class="flex-grow border border-indigo-300 rounded-xl px-3 py-2 text-xs outline-none">
-                        <button onclick="saveApiUrl()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-4 py-2 rounded-xl font-medium transition shadow">
-                            Simpan API URL
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Installation Guide -->
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4 text-slate-700 text-sm">
-                    <h2 class="text-lg font-bold text-slate-900 border-b pb-2">Panduan Pemasangan GitHub Pages & Google Sheets</h2>
-                    <ol class="list-decimal list-inside space-y-2 text-xs">
-                        <li>Buat Google Spreadsheet baru dengan 3 Sheet: <code>DataMaster</code>, <code>DataPresensi</code>, <code>DataAkun</code>.</li>
-                        <li>Buka menu <b>Ekstensi</b> &gt; <b>Apps Script</b>, lalu salin isi file <code>Code.gs</code> ke editor tersebut.</li>
-                        <li>Klik <b>Deploy</b> &gt; <b>Deployment Baru</b> &gt; Pilih Jenis: <b>Aplikasi Web</b> &gt; Akses: <b>Siapa Saja (Anyone)</b>.</li>
-                        <li>Salin URL Web App yang dihasilkan dan tempelkan pada form Pengaturan API di atas.</li>
-                        <li>Unggah file <code>index.html</code>, <code>style.css</code>, dan <code>app.js</code> ke repositori GitHub Anda dan aktifkan <b>GitHub Pages</b>.</li>
-                    </ol>
                 </div>
             </div>
 
