@@ -4,7 +4,7 @@ let state = {
     currentUser: null,
     activeTab: 'presensi',
     selectedSesi: localStorage.getItem('last_selected_sesi') || DEFAULT_SESI,
-    apiUrl: 'https://script.google.com/macros/s/AKfycbxf2FGZETM3Hx7AowtvkUowvH_ww3t6USmZnV_S5AbXvtS8B-n8D8j6slrjvYZCKUsi/exec',
+    apiUrl: 'https://script.google.com/macros/s/AKfycbw02eGYX4tF563s5pTvZ8YGEKduDv8r05PvzEnbyzldxvUYOHEmiBwNkHkXItbHLiZx/exec',
     html5QrcodeScanner: null,
     dataMaster: [],
     dataPresensi: [],
