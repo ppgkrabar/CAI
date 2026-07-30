@@ -227,7 +227,9 @@ function processPresensi(scannedId) {
         return;
     }
 
-    const alreadyIn = state.dataPresensi.some(p => p.ID === participant.ID && p.Sesi === state.selectedSesi && p.Status === 'Hadir');
+    //const alreadyIn = state.dataPresensi.some(p => p.ID === participant.ID && p.Sesi === state.selectedSesi && p.Status === 'Hadir' );
+
+    const alreadyIn = state.dataPresensi.some(p => p.ID === participant.ID && p.Sesi === state.selectedSesi && p.Status <> '' );
 
     if (alreadyIn) {
         Swal.fire({
