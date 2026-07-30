@@ -3,8 +3,8 @@ const DEFAULT_SESI = "Sesi 1 (Registrasi)";
 let state = {
     currentUser: null, // { username, nama, role }
     activeTab: 'presensi',
-    selectedSesi: localStorage.getItem('last_selected_sesi') || DEFAULT_SESI,
-    apiUrl: localStorage.getItem('gas_api_url') || 'https://script.google.com/macros/s/AKfycbw02eGYX4tF563s5pTvZ8YGEKduDv8r05PvzEnbyzldxvUYOHEmiBwNkHkXItbHLiZx/exec',
+    selectedSesi: DEFAULT_SESI,
+    apiUrl: 'https://script.google.com/macros/s/AKfycbw02eGYX4tF563s5pTvZ8YGEKduDv8r05PvzEnbyzldxvUYOHEmiBwNkHkXItbHLiZx/exec',
     html5QrcodeScanner: null,
     // DEMO INITIAL DATA (Bisa langsung diuji coba sebelum koneksi API)
     dataMaster: [
