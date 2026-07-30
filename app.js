@@ -1,23 +1,14 @@
 const DEFAULT_SESI = "Sesi 1 (Registrasi)";
 
 let state = {
-    currentUser: null, // { username, nama, role }
+    currentUser: null,
     activeTab: 'presensi',
-    selectedSesi: DEFAULT_SESI,
-    apiUrl: 'https://script.google.com/macros/s/AKfycbw02eGYX4tF563s5pTvZ8YGEKduDv8r05PvzEnbyzldxvUYOHEmiBwNkHkXItbHLiZx/exec',
+    selectedSesi: localStorage.getItem('last_selected_sesi') || DEFAULT_SESI,
+    apiUrl: 'https://script.google.com/macros/s/AKfycbxf2FGZETM3Hx7AowtvkUowvH_ww3t6USmZnV_S5AbXvtS8B-n8D8j6slrjvYZCKUsi/exec',
     html5QrcodeScanner: null,
-    // DEMO INITIAL DATA (Bisa langsung diuji coba sebelum koneksi API)
-    dataMaster: [
-        { ID: 'P001', Nama: 'Ahmad Fauzi', Kelompok: 'Kelompok A', Dapukan: 'Ketua' },
-        { ID: 'P002', Nama: 'Siti Rahma', Kelompok: 'Kelompok A', Dapukan: 'Anggota' },
-        { ID: 'P003', Nama: 'Budi Santoso', Kelompok: 'Kelompok B', Dapukan: 'Penerima Tamu' },
-        { ID: 'P004', Nama: 'Dewi Lestari', Kelompok: 'Kelompok B', Dapukan: 'Konsumsi' },
-        { ID: 'P005', Nama: 'Eko Prasetyo', Kelompok: 'Kelompok C', Dapukan: 'Konsumsi' },
-        { ID: 'P006', Nama: 'Fitri Handayani', Kelompok: 'Kelompok C', Dapukan: 'Keamanan' }
-    ],
-    dataPresensi: [
-        { ID: 'P001', Nama: 'Ahmad Fauzi', Kelompok: 'Kelompok A', Dapukan: 'Ketua', Sesi: 'Sesi 1 (Registrasi)', Pengabsen: 'admin', Waktu: '30/07/2026, 08:15', Status: 'Hadir' }
-    ],
+    dataMaster: [],
+    dataPresensi: [],
+    // Akun bawaan sistem
     dataAkun: [
         { Username: 'admin', Password: '123', Nama: 'Administrator Utama', Role: 'Administrator' },
         { Username: 'petugas', Password: '123', Nama: 'Petugas Lapangan', Role: 'Petugas' }
@@ -25,11 +16,11 @@ let state = {
 };
 
 window.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('sesiSelect').value = state.selectedSesi;
-    document.getElementById('belumAbsenSesiSelect').value = state.selectedSesi;
-    
-    if (document.getElementById('apiEndpointUrl')) {
-        document.getElementById('apiEndpointUrl').value = state.apiUrl;
+    if (document.getElementById('sesiSelect')) {
+        document.getElementById('sesiSelect').value = state.selectedSesi;
+    }
+    if (document.getElementById('belumAbsenSesiSelect')) {
+        document.getElementById('belumAbsenSesiSelect').value = state.selectedSesi;
     }
 
     if (state.apiUrl) {
@@ -43,27 +34,40 @@ async function fetchInitialDataFromGAS() {
         const response = await fetch(`${state.apiUrl}?action=getInitialData`);
         const result = await response.json();
         if (result.success) {
-            if (result.master && result.master.length > 0) state.dataMaster = result.master;
-            if (result.presensi && result.presensi.length > 0) state.dataPresensi = result.presensi;
+            if (result.master) state.dataMaster = result.master;
+            if (result.presensi) state.dataPresensi = result.presensi;
             if (result.akun && result.akun.length > 0) state.dataAkun = result.akun;
             console.log("Data berhasil dimuat dari Google Sheets!");
         }
     } catch (err) {
-        console.warn("Menggunakan data demo lokal.", err);
+        console.warn("Gagal terhubung ke API backend, menggunakan data lokal.", err);
     }
 }
 
-function fillDemoLogin(user, pass) {
-    document.getElementById('loginUsername').value = user;
-    document.getElementById('loginPassword').value = pass;
-}
-
 function handleLogin(e) {
-    e.preventDefault();
-    const u = document.getElementById('loginUsername').value.trim();
-    const p = document.getElementById('loginPassword').value.trim();
+    if (e) e.preventDefault();
+    
+    const userInput = document.getElementById('loginUsername');
+    const passInput = document.getElementById('loginPassword');
 
-    const found = state.dataAkun.find(a => a.Username === u && a.Password === p);
+    if (!userInput || !passInput) return;
+
+    const u = userInput.value.trim();
+    const p = passInput.value.trim();
+
+    if (!u || !p) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Form Belum Lengkap',
+            text: 'Silakan isi username dan password!'
+        });
+        return;
+    }
+
+    // Matching username (abaikan kapital/kecil) & password
+    const found = state.dataAkun.find(a => 
+        String(a.Username).toLowerCase() === u.toLowerCase() && String(a.Password) === p
+    );
 
     if (found) {
         state.currentUser = { username: found.Username, nama: found.Nama, role: found.Role };
@@ -97,6 +101,8 @@ function handleLogin(e) {
 function handleLogout() {
     stopScanner();
     state.currentUser = null;
+    document.getElementById('loginUsername').value = '';
+    document.getElementById('loginPassword').value = '';
     document.getElementById('userInfoHeader').classList.add('hidden');
     document.getElementById('dashboardSection').classList.add('hidden');
     document.getElementById('loginSection').classList.remove('hidden');
@@ -104,21 +110,22 @@ function handleLogout() {
 
 function renderNavTabs() {
     const container = document.getElementById('navTabs');
+    if (!container) return;
     container.innerHTML = '';
 
-    const isAdmin = state.currentUser.role === 'Administrator';
+    const isAdmin = state.currentUser && state.currentUser.role === 'Administrator';
 
     const tabs = [
         { id: 'presensi', label: 'Presensi QR-Code', icon: 'fa-qrcode', show: true },
         { id: 'rekap', label: 'Data Rekap Absen', icon: 'fa-chart-pie', show: isAdmin },
         { id: 'belumAbsen', label: 'Peserta Belum Absen', icon: 'fa-user-clock', show: true },
-        { id: 'kelolaAkun', label: 'Kelola Akun', icon: 'fa-user-gear', show: isAdmin },
-        { id: 'panduan', label: 'Panduan & API', icon: 'fa-code', show: true }
+        { id: 'kelolaAkun', label: 'Kelola Akun', icon: 'fa-user-gear', show: isAdmin }
     ];
 
     tabs.forEach(tab => {
         if (tab.show) {
             const btn = document.createElement('button');
+            btn.type = 'button';
             btn.onclick = () => switchTab(tab.id);
             btn.className = `px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition ${
                 state.activeTab === tab.id ? 'bg-indigo-600 text-white shadow' : 'text-slate-600 hover:bg-slate-100'
@@ -131,46 +138,55 @@ function renderNavTabs() {
 }
 
 function switchTab(tabId) {
+    const isAdmin = state.currentUser && state.currentUser.role === 'Administrator';
+    if ((tabId === 'rekap' || tabId === 'kelolaAkun') && !isAdmin) {
+        Swal.fire('Akses Ditolak', 'Halaman ini hanya untuk Administrator.', 'warning');
+        return;
+    }
+
     state.activeTab = tabId;
     
     document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
 
     document.querySelectorAll('#navTabs button').forEach(btn => {
-        btn.className = btn.className.replace('bg-indigo-600 text-white shadow', 'text-slate-600 hover:bg-slate-100');
+        btn.className = 'px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition text-slate-600 hover:bg-slate-100';
     });
 
     const activeBtn = document.getElementById(`navBtn_${tabId}`);
     if (activeBtn) {
-        activeBtn.className = activeBtn.className.replace('text-slate-600 hover:bg-slate-100', 'bg-indigo-600 text-white shadow');
+        activeBtn.className = 'px-4 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition bg-indigo-600 text-white shadow';
     }
 
     if (tabId === 'presensi') {
-        document.getElementById('tabPresensi').classList.remove('hidden');
+        document.getElementById('tabPresensi')?.classList.remove('hidden');
+        renderRecentPresensiLog();
     } else if (tabId === 'rekap') {
-        document.getElementById('tabDataAbsen').classList.remove('hidden');
+        document.getElementById('tabDataAbsen')?.classList.remove('hidden');
         renderRekapDataGrid();
     } else if (tabId === 'belumAbsen') {
-        document.getElementById('tabBelumAbsen').classList.remove('hidden');
+        document.getElementById('tabBelumAbsen')?.classList.remove('hidden');
         renderBelumAbsenGrid();
     } else if (tabId === 'kelolaAkun') {
-        document.getElementById('tabKelolaAkun').classList.remove('hidden');
+        document.getElementById('tabKelolaAkun')?.classList.remove('hidden');
         renderAccountList();
-    } else if (tabId === 'panduan') {
-        document.getElementById('tabPanduan').classList.remove('hidden');
     }
 }
 
 function handleSesiChange(val) {
     state.selectedSesi = val;
     localStorage.setItem('last_selected_sesi', val);
-    document.getElementById('belumAbsenSesiSelect').value = val;
+    
+    const elemBelumAbsen = document.getElementById('belumAbsenSesiSelect');
+    if (elemBelumAbsen) elemBelumAbsen.value = val;
+    
     renderRecentPresensiLog();
+    if (state.activeTab === 'belumAbsen') renderBelumAbsenGrid();
 }
 
 function startScanner() {
-    document.getElementById('qrPlaceholder').classList.add('hidden');
-    document.getElementById('btnStartCamera').classList.add('hidden');
-    document.getElementById('btnStopCamera').classList.remove('hidden');
+    document.getElementById('qrPlaceholder')?.classList.add('hidden');
+    document.getElementById('btnStartCamera')?.classList.add('hidden');
+    document.getElementById('btnStopCamera')?.classList.remove('hidden');
 
     state.html5QrcodeScanner = new Html5Qrcode("qr-reader");
     const config = { fps: 10, qrbox: { width: 220, height: 220 } };
@@ -190,9 +206,9 @@ function startScanner() {
 function stopScanner() {
     if (state.html5QrcodeScanner) {
         state.html5QrcodeScanner.stop().then(() => {
-            document.getElementById('qrPlaceholder').classList.remove('hidden');
-            document.getElementById('btnStartCamera').classList.remove('hidden');
-            document.getElementById('btnStopCamera').classList.add('hidden');
+            document.getElementById('qrPlaceholder')?.classList.remove('hidden');
+            document.getElementById('btnStartCamera')?.classList.remove('hidden');
+            document.getElementById('btnStopCamera')?.classList.add('hidden');
         }).catch(err => console.log(err));
     }
 }
@@ -287,6 +303,8 @@ function processPresensi(scannedId) {
 
 function renderRecentPresensiLog() {
     const list = document.getElementById('recentPresensiList');
+    if (!list) return;
+    
     const filtered = state.dataPresensi.filter(p => p.Sesi === state.selectedSesi);
 
     if (filtered.length === 0) {
@@ -309,7 +327,10 @@ function renderRecentPresensiLog() {
 
 function renderRekapDataGrid() {
     const container = document.getElementById('rekapGridContainer');
-    const sesiFilter = document.getElementById('rekapSesiFilter').value;
+    if (!container) return;
+    
+    const filterElem = document.getElementById('rekapSesiFilter');
+    const sesiFilter = filterElem ? filterElem.value : 'ALL';
 
     const dapukanGroups = {};
 
@@ -370,7 +391,10 @@ function renderRekapDataGrid() {
 
 function renderBelumAbsenGrid() {
     const container = document.getElementById('belumAbsenGridContainer');
-    const targetSesi = document.getElementById('belumAbsenSesiSelect').value;
+    if (!container) return;
+
+    const targetSesiElem = document.getElementById('belumAbsenSesiSelect');
+    const targetSesi = targetSesiElem ? targetSesiElem.value : state.selectedSesi;
 
     const attendedIds = state.dataPresensi
         .filter(p => p.Sesi === targetSesi)
@@ -378,7 +402,10 @@ function renderBelumAbsenGrid() {
 
     const unabsentList = state.dataMaster.filter(m => !attendedIds.includes(m.ID));
 
-    document.getElementById('belumAbsenBadge').innerText = `Total Belum Absen: ${unabsentList.length} Orang`;
+    const badgeElem = document.getElementById('belumAbsenBadge');
+    if (badgeElem) {
+        badgeElem.innerText = `Total Belum Absen: ${unabsentList.length} Orang`;
+    }
 
     if (unabsentList.length === 0) {
         container.innerHTML = `
@@ -456,6 +483,7 @@ function quickUpdateStatus(id, sesi, status) {
     });
 
     renderBelumAbsenGrid();
+    renderRecentPresensiLog();
 
     if (state.apiUrl) {
         fetch(state.apiUrl, {
@@ -487,7 +515,7 @@ function handleAddAccount(e) {
     const password = document.getElementById('accPassword').value.trim();
     const role = document.getElementById('accRole').value;
 
-    if (state.dataAkun.some(a => a.Username === username)) {
+    if (state.dataAkun.some(a => a.Username.toLowerCase() === username.toLowerCase())) {
         Swal.fire('Gagal', 'Username sudah terdaftar!', 'error');
         return;
     }
@@ -510,6 +538,8 @@ function handleAddAccount(e) {
 
 function renderAccountList() {
     const body = document.getElementById('accountTableBody');
+    if (!body) return;
+
     body.innerHTML = state.dataAkun.map((a, idx) => `
         <tr class="hover:bg-slate-50">
             <td class="p-3 text-slate-400">${idx + 1}</td>
@@ -525,17 +555,19 @@ function renderAccountList() {
 }
 
 function openWordPressViewModal() {
-    document.getElementById('wpModal').classList.remove('hidden');
+    document.getElementById('wpModal')?.classList.remove('hidden');
     document.getElementById('wpSesiSelect').value = state.selectedSesi;
     renderWordPressViewData();
 }
 
 function closeWordPressViewModal() {
-    document.getElementById('wpModal').classList.add('hidden');
+    document.getElementById('wpModal')?.classList.add('hidden');
 }
 
 function renderWordPressViewData() {
     const container = document.getElementById('wpContentContainer');
+    if (!container) return;
+
     const targetSesi = document.getElementById('wpSesiSelect').value;
 
     const attendedIds = state.dataPresensi
@@ -580,16 +612,4 @@ function renderWordPressViewData() {
             `).join('')}
         </div>
     `;
-}
-
-function saveApiUrl() {
-    const url = document.getElementById('apiEndpointUrl').value.trim();
-    localStorage.setItem('gas_api_url', url);
-    state.apiUrl = url;
-    if (url) {
-        fetchInitialDataFromGAS();
-        Swal.fire('Tersimpan', 'API URL Google Apps Script berhasil disimpan!', 'success');
-    } else {
-        Swal.fire('Mode Demo', 'Menggunakan data demo lokal.', 'info');
-    }
 }
