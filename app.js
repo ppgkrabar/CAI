@@ -113,7 +113,7 @@ function renderNavTabs() {
         { id: 'rekap', label: 'Data Rekap Absen', icon: 'fa-chart-pie', show: isAdmin },
         { id: 'belumAbsen', label: 'Peserta Belum Absen', icon: 'fa-user-clock', show: true },
         { id: 'kelolaAkun', label: 'Kelola Akun', icon: 'fa-user-gear', show: isAdmin },
-        { id: 'panduan', label: 'Panduan & API', icon: 'fa-code', show: true }
+        { id: 'panduan', label: 'Panduan & API', icon: 'fa-code', show: false }
     ];
 
     tabs.forEach(tab => {
