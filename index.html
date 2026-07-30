@@ -3,333 +3,479 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Presensi CAI 2026</title>
-    <!-- Tailwind CSS CDN -->
+    <title>Krabar | Presensi CAI 2026</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- FontAwesome CDN -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- HTML5 QR Code Scanner CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
-    <!-- SweetAlert2 CDN -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <!-- Google Fonts Inter -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <!-- External Custom CSS -->
-    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+        .chart-container { position: relative; width: 100%; max-width: 600px; margin-left: auto; margin-right: auto; height: 320px; max-height: 400px; }
+        .nav-active { color: #10b981; border-bottom: 3px solid #10b981; }
+        .scanner-box { border: 4px solid #10b981; border-radius: 1rem; overflow: hidden; position: relative; }
+        @media print { .no-print { display: none !important; } #wp-view { display: block !important; position: absolute; left: 0; top: 0; } }
+    </style>
 </head>
-<body class="bg-slate-100 min-h-screen text-slate-800 flex flex-col">
+<body class="text-slate-800">
 
-    <!-- TOP NAVIGATION BAR -->
-    <header class="bg-indigo-700 text-white shadow-lg sticky top-0 z-40">
-        <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-            <div class="flex items-center space-x-3">
-                <div class="bg-white/20 p-2 rounded-lg">
-                    <i class="fa-solid fa-qrcode text-2xl text-amber-300"></i>
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900 px-4">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl font-bold">QR</div>
+                <h1 class="text-2xl font-bold text-slate-900">Sistem Presensi</h1>
+                <p class="text-slate-500 text-sm">Silakan login untuk memulai sesi</p>
+            </div>
+            <form id="login-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Username</label>
+                    <input type="text" id="user" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
                 </div>
                 <div>
-                    <h1 class="font-bold text-lg leading-tight">Presensi Kegiatan</h1>
-                    <p class="text-xs text-indigo-200" id="userBadge">Sistem Presensi Digital</p>
+                    <label class="block text-xs font-bold text-slate-400 uppercase mb-1">Password</label>
+                    <input type="password" id="pass" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
                 </div>
-            </div>
-            
-            <div id="userInfoHeader" class="hidden flex items-center space-x-3">
-                <div class="text-right hidden sm:block">
-                    <p class="text-sm font-semibold" id="headerName">-</p>
-                    <span class="text-xs bg-indigo-900 px-2 py-0.5 rounded text-indigo-200" id="headerRole">-</span>
-                </div>
-                <button onclick="handleLogout()" class="bg-rose-600 hover:bg-rose-700 text-white px-3 py-1.5 rounded-lg text-sm transition flex items-center gap-1 shadow">
-                    <i class="fa-solid fa-right-from-bracket"></i> <span class="hidden sm:inline">Keluar</span>
-                </button>
-            </div>
-        </div>
-    </header>
-
-    <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6">
-
-        <!-- 1. HALAMAN LOGIN -->
-        <section id="loginSection" class="max-w-md mx-auto my-8 md:my-16">
-            <div class="glass-card rounded-2xl p-6 md:p-8 shadow-xl border border-indigo-100">
-                <div class="text-center mb-6">
-                    <div class="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">
-                        <i class="fa-solid fa-user-lock"></i>
-                    </div>
-                    <h2 class="text-2xl font-bold text-slate-800">Masuk Akun</h2>
-                    <p class="text-sm text-slate-500 mt-1">Masukkan username & password petugas</p>
-                </div>
-
-                <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-4">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Username</label>
-                        <div class="relative">
-                            <i class="fa-solid fa-user absolute left-3 top-3 text-slate-400"></i>
-                            <input type="text" id="loginUsername" required class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm" placeholder="Masukkan username">
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Password</label>
-                        <div class="relative">
-                            <i class="fa-solid fa-lock absolute left-3 top-3 text-slate-400"></i>
-                            <input type="password" id="loginPassword" required class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none text-sm" placeholder="••••••••">
-                        </div>
-                    </div>
-                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl transition shadow-lg shadow-indigo-200">
-                        Masuk Sistem
-                    </button>
-                </form>
-            </div>
-        </section>
-
-        <!-- 2. DASHBOARD UTAMA (ADMIN & PETUGAS) -->
-        <section id="dashboardSection" class="hidden space-y-6">
-            
-            <!-- Dynamic Navigation Tabs -->
-            <div class="bg-white rounded-2xl p-2 shadow-sm border border-slate-200 overflow-x-auto">
-                <nav id="navTabs" class="flex space-x-1 min-w-max">
-                    <!-- Nav items rendered dynamically via JS based on role -->
-                </nav>
-            </div>
-
-            <!-- TAB 1: PRESENSI QR CODE & MANUAL -->
-            <div id="tabPresensi" class="tab-content space-y-6">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    
-                    <!-- Control Panel (Left Column) -->
-                    <div class="lg:col-span-1 space-y-6">
-                        <!-- Sesi Picker Card -->
-                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                            <label class="block text-sm font-semibold text-slate-700 mb-2 flex items-center gap-2">
-                                <i class="fa-solid fa-calendar-check text-indigo-600"></i>
-                                Pilih Sesi Kegiatan
-                            </label>
-                            <select id="sesiSelect" onchange="handleSesiChange(this.value)" class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2.5 text-sm font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
-                                <option value="Sesi 1 (Registrasi)">Sesi 1 (Registrasi)</option>
-                                <option value="Sesi 2 (Malam)">Sesi 2 (Malam)</option>
-                                <option value="Sesi 3 (Pagi)">Sesi 3 (Pagi)</option>
-                                <option value="Sesi FGD">Sesi FGD</option>
-                            </select>
-                            <p class="text-xs text-slate-500 mt-2">
-                                <i class="fa-solid fa-circle-info text-amber-500"></i> Otomatis memilih sesi terakhir yang dipakai.
-                            </p>
-                        </div>
-
-                        <!-- Manual Input Card -->
-                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                            <h3 class="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                                <i class="fa-solid fa-keyboard text-indigo-600"></i>
-                                Input ID Manual (Gagal Scan)
-                            </h3>
-                            <form onsubmit="handleManualSubmit(event)" class="space-y-3">
-                                <div>
-                                    <input type="text" id="manualIdInput" placeholder="Masukkan ID Peserta (contoh: P001)" class="w-full border border-slate-300 rounded-xl px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
-                                </div>
-                                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl text-sm transition shadow">
-                                    Simpan Presensi Manual
-                                </button>
-                            </form>
-                        </div>
-
-                        <!-- WordPress View Modal Trigger -->
-                        <div class="bg-amber-50 border border-amber-200 p-5 rounded-2xl">
-                            <h4 class="font-semibold text-amber-800 text-sm mb-1">
-                                <i class="fa-brands fa-wordpress mr-1"></i> Halaman Publik Peserta
-                            </h4>
-                            <p class="text-xs text-amber-700 mb-3">Tampilkan halaman khusus berisi daftar peserta belum absen sesuai kategori sesi.</p>
-                            <button onclick="openWordPressViewModal()" class="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium py-2 rounded-xl text-sm transition flex items-center justify-center gap-2 shadow-sm">
-                                <i class="fa-solid fa-arrow-up-right-from-square"></i> Buka View WordPress
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Scanner Area (Right Column) -->
-                    <div class="lg:col-span-2">
-                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center">
-                            <div class="w-full flex justify-between items-center mb-4">
-                                <h3 class="font-semibold text-slate-800 flex items-center gap-2">
-                                    <i class="fa-solid fa-camera text-indigo-600"></i> Scanner QR Code Kamera
-                                </h3>
-                                <div class="flex gap-2">
-                                    <button id="btnStartCamera" onclick="startScanner()" class="bg-emerald-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-emerald-700 transition">
-                                        <i class="fa-solid fa-power-off mr-1"></i> Aktifkan Kamera
-                                    </button>
-                                    <button id="btnStopCamera" onclick="stopScanner()" class="bg-slate-600 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-slate-700 transition hidden">
-                                        <i class="fa-solid fa-stop mr-1"></i> Matikan Kamera
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- QR Reader Container -->
-                            <div class="w-full max-w-md bg-slate-900 rounded-xl overflow-hidden min-h-[280px] flex items-center justify-center relative">
-                                <div id="qr-reader" class="w-full"></div>
-                                <div id="qrPlaceholder" class="text-center p-6 text-slate-400">
-                                    <i class="fa-solid fa-qrcode text-5xl mb-2 opacity-50"></i>
-                                    <p class="text-sm">Kamera Nonaktif. Klik "Aktifkan Kamera" untuk scan QR Code.</p>
-                                </div>
-                            </div>
-
-                            <!-- Recent Scan History Log -->
-                            <div class="w-full mt-6">
-                                <h4 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Riwayat Presensi Sesi Ini:</h4>
-                                <div id="recentPresensiList" class="space-y-2 max-h-48 overflow-y-auto">
-                                    <p class="text-xs text-slate-400 italic">Belum ada data presensi yang masuk.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-
-            <!-- TAB 2: REKAP DATA ABSEN (GRID DAPUKAN) - ADMIN ONLY -->
-            <div id="tabDataAbsen" class="tab-content hidden space-y-6">
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-4">
-                    <div>
-                        <h2 class="text-lg font-bold text-slate-800">Rekapitulasi Presensi Peserta</h2>
-                        <p class="text-xs text-slate-500">Tampilan data dikelompokkan berdasarkan Dapukan</p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <label class="text-xs font-medium text-slate-600">Filter Sesi:</label>
-                        <select id="rekapSesiFilter" onchange="renderRekapDataGrid()" class="bg-slate-50 border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-medium outline-none">
-                            <option value="ALL">Semua Sesi</option>
-                            <option value="Sesi 1 (Registrasi)">Sesi 1 (Registrasi)</option>
-                            <option value="Sesi 2 (Malam)">Sesi 2 (Malam)</option>
-                            <option value="Sesi 3 (Pagi)">Sesi 3 (Pagi)</option>
-                            <option value="Sesi FGD">Sesi FGD</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Grid Containers grouped by Dapukan -->
-                <div id="rekapGridContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Dynamic Grid per Dapukan -->
-                </div>
-            </div>
-
-            <!-- TAB 3: PESERTA BELUM ABSEN (DAPUKAN GRID + INSTANT EDIT) -->
-            <div id="tabBelumAbsen" class="tab-content hidden space-y-6">
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap justify-between items-center gap-4">
-                    <div>
-                        <h2 class="text-lg font-bold text-slate-800">Daftar Peserta Belum Absen</h2>
-                        <p class="text-xs text-slate-500" id="belumAbsenCounterSubtitle">Pilih sesi kegiatan untuk menampilkan data peserta</p>
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <span id="belumAbsenBadge" class="bg-rose-100 text-rose-700 font-bold px-3 py-1 rounded-full text-xs">
-                            Total Belum Absen: 0 Orang
-                        </span>
-                        <select id="belumAbsenSesiSelect" onchange="renderBelumAbsenGrid()" class="bg-indigo-50 border border-indigo-200 text-indigo-900 rounded-lg px-3 py-1.5 text-xs font-semibold outline-none">
-                            <option value="Sesi 1 (Registrasi)">Sesi 1 (Registrasi)</option>
-                            <option value="Sesi 2 (Malam)">Sesi 2 (Malam)</option>
-                            <option value="Sesi 3 (Pagi)">Sesi 3 (Pagi)</option>
-                            <option value="Sesi FGD">Sesi FGD</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Grid Containers grouped by Dapukan -->
-                <div id="belumAbsenGridContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Dynamic Grid per Dapukan with Direct Action -->
-                </div>
-            </div>
-
-            <!-- TAB 4: KELOLA AKUN (ADMIN ONLY) -->
-            <div id="tabKelolaAkun" class="tab-content hidden space-y-6">
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <!-- Form Tambah Akun -->
-                    <div class="lg:col-span-1 bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                        <h3 class="font-bold text-slate-800 text-base mb-4 flex items-center gap-2">
-                            <i class="fa-solid fa-user-plus text-indigo-600"></i> Tambah Akun Petugas
-                        </h3>
-                        <form onsubmit="handleAddAccount(event)" class="space-y-4">
-                            <div>
-                                <label class="block text-xs font-medium text-slate-700 mb-1">Nama Lengkap</label>
-                                <input type="text" id="accNama" required class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-slate-700 mb-1">Username</label>
-                                <input type="text" id="accUsername" required class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-slate-700 mb-1">Password</label>
-                                <input type="password" id="accPassword" required class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-medium text-slate-700 mb-1">Role Akun</label>
-                                <select id="accRole" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500">
-                                    <option value="Petugas">Petugas</option>
-                                    <option value="Administrator">Administrator</option>
-                                </select>
-                            </div>
-                            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-xl text-sm transition shadow">
-                                Simpan Akun Baru
-                            </button>
-                        </form>
-                    </div>
-
-                    <!-- Daftar Akun -->
-                    <div class="lg:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
-                        <h3 class="font-bold text-slate-800 text-base mb-4 flex items-center gap-2">
-                            <i class="fa-solid fa-users text-indigo-600"></i> Daftar Akun Terdaftar
-                        </h3>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left text-xs border-collapse">
-                                <thead>
-                                    <tr class="bg-slate-100 text-slate-600 uppercase font-semibold">
-                                        <th class="p-3 rounded-l-lg">No</th>
-                                        <th class="p-3">Nama</th>
-                                        <th class="p-3">Username</th>
-                                        <th class="p-3 rounded-r-lg">Role</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="accountTableBody" class="divide-y divide-slate-100">
-                                    <!-- Rendered dynamically -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-        </section>
-
-    </main>
-
-    <!-- MODAL WORDPRESS / STANDALONE VIEW -->
-    <div id="wpModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
-        <div class="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
-            <div class="bg-indigo-800 text-white p-4 flex justify-between items-center">
-                <div class="flex items-center gap-2">
-                    <i class="fa-brands fa-wordpress text-2xl text-amber-300"></i>
-                    <div>
-                        <h3 class="font-bold text-sm">Halaman Ringkasan Belum Absen (WordPress View)</h3>
-                        <p class="text-xs text-indigo-200">Tampilan khusus untuk iframe / publikasi halaman web</p>
-                    </div>
-                </div>
-                <button onclick="closeWordPressViewModal()" class="text-white hover:bg-indigo-700 p-1 rounded-lg">
-                    <i class="fa-solid fa-xmark text-xl"></i>
-                </button>
-            </div>
-            
-            <div class="p-4 bg-slate-50 border-b flex items-center justify-between gap-4">
-                <div class="flex items-center gap-2">
-                    <span class="text-xs font-semibold text-slate-700">Kategori Sesi:</span>
-                    <select id="wpSesiSelect" onchange="renderWordPressViewData()" class="bg-white border border-slate-300 rounded-lg px-3 py-1.5 text-xs font-medium outline-none">
-                        <option value="Sesi 1 (Registrasi)">Sesi 1 (Registrasi)</option>
-                        <option value="Sesi 2 (Malam)">Sesi 2 (Malam)</option>
-                        <option value="Sesi 3 (Pagi)">Sesi 3 (Pagi)</option>
-                        <option value="Sesi FGD">Sesi FGD</option>
-                    </select>
-                </div>
-                <button onclick="window.print()" class="bg-slate-800 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-slate-700">
-                    <i class="fa-solid fa-print mr-1"></i> Cetak / PDF
-                </button>
-            </div>
-
-            <div class="p-6 overflow-y-auto flex-grow space-y-6" id="wpContentContainer">
-                <!-- Grouped Grid by Dapukan rendered here -->
-            </div>
+                <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-emerald-200">Masuk</button>
+            </form>
+            <p class="text-center text-[10px] text-slate-400 mt-6 italic">Demo: admin (123) / petugas (123)</p>
         </div>
     </div>
 
-    <!-- External Custom JavaScript -->
-    <script src="app.js"></script>
+    <!-- MAIN APP -->
+    <div id="main-app" class="hidden min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="bg-white border-b border-slate-100 sticky top-0 z-40">
+            <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <span class="text-xl font-bold text-emerald-600">PresensiPro</span>
+                    <span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded text-[10px] font-bold" id="role-label">ADMIN</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span class="text-xs font-medium text-slate-500 hidden sm:block" id="name-label">Nama Pengguna</span>
+                    <button onclick="app.logout()" class="text-slate-400 hover:text-rose-500 transition">&#10005;</button>
+                </div>
+            </div>
+            <nav class="max-w-7xl mx-auto px-4 flex gap-6 overflow-x-auto no-print" id="nav-menu"></nav>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-grow max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
+
+            <!-- TAB: PRESENSI -->
+            <section id="tab-presence" class="tab-panel space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-1 space-y-6">
+                        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                            <label class="block text-sm font-bold text-slate-700 mb-2">Pilih Sesi Aktif</label>
+                            <select id="active-sesi" onchange="app.saveLastSesi()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-emerald-500">
+                                <option>Sesi 1 (Registrasi)</option>
+                                <option>Sesi 2 (Malam)</option>
+                                <option>Sesi 3 (Pagi)</option>
+                                <option>Sesi FGD</option>
+                            </select>
+                            <p class="text-[10px] text-slate-400 mt-2">Sesi akan otomatis tersimpan untuk penggunaan berikutnya.</p>
+                        </div>
+                        <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-xl">
+                            <h3 class="font-bold mb-4 flex items-center gap-2"><span>&#128187;</span> Input Manual</h3>
+                            <div class="flex gap-2">
+                                <input type="text" id="manual-id" placeholder="Masukkan ID" class="flex-grow bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm focus:bg-white/20 outline-none">
+                                <button onclick="app.handleManual()" class="bg-emerald-500 hover:bg-emerald-600 px-4 py-2 rounded-lg text-sm font-bold transition">Proses</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="lg:col-span-2">
+                        <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                            <div class="flex justify-between items-center mb-4 px-2">
+                                <h3 class="font-bold text-slate-800">Kamera Scanner</h3>
+                                <button id="btn-camera" onclick="app.toggleScanner()" class="bg-emerald-600 text-white px-4 py-1.5 rounded-lg text-xs font-bold shadow-sm">Aktifkan Kamera</button>
+                            </div>
+                            <div id="reader" class="scanner-box bg-slate-50 aspect-video flex items-center justify-center">
+                                <span class="text-slate-400 text-sm">Scanner belum aktif</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Mini Log -->
+                <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                    <div class="p-4 border-b border-slate-50 flex justify-between items-center">
+                        <h3 class="font-bold text-slate-800">Aktivitas Terakhir</h3>
+                        <button onclick="app.openWpView()" class="text-emerald-600 text-xs font-bold">Lihat Data WordPress &raquo;</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
+                                <tr>
+                                    <th class="px-6 py-3">Nama</th>
+                                    <th class="px-6 py-3">ID</th>
+                                    <th class="px-6 py-3">Sesi</th>
+                                    <th class="px-6 py-3">Waktu</th>
+                                    <th class="px-6 py-3">Petugas</th>
+                                </tr>
+                            </thead>
+                            <tbody id="log-body" class="divide-y divide-slate-50"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: REKAP DATA (ADMIN ONLY) -->
+            <section id="tab-recap" class="tab-panel hidden space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                        <h3 class="font-bold text-slate-800 mb-4">Statistik Kehadiran Sesi</h3>
+                        <div class="chart-container"><canvas id="chart-pie"></canvas></div>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                        <h3 class="font-bold text-slate-800 mb-4">Partisipasi per Dapukan</h3>
+                        <div class="chart-container"><canvas id="chart-bar"></canvas></div>
+                    </div>
+                </div>
+                <div id="recap-grid" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+            </section>
+
+            <!-- TAB: BELUM ABSEN -->
+            <section id="tab-unabsent" class="tab-panel hidden space-y-6">
+                <div class="bg-emerald-600 p-8 rounded-3xl text-white flex flex-col md:flex-row justify-between items-center gap-6 shadow-xl shadow-emerald-100">
+                    <div>
+                        <h2 class="text-2xl font-bold">Kontrol Kehadiran Sesi</h2>
+                        <p class="text-emerald-100 text-sm">Peserta yang terdaftar namun belum memindai kode.</p>
+                        <div id="unabsent-count" class="mt-2 inline-block px-3 py-1 bg-white/20 rounded-full text-xs font-bold">Total: 0 Orang</div>
+                    </div>
+                    <select id="unabsent-sesi" onchange="app.renderUnabsent()" class="bg-white text-slate-900 border-none rounded-xl px-6 py-3 font-bold outline-none cursor-pointer">
+                        <option>Sesi 1 (Registrasi)</option>
+                        <option>Sesi 2 (Malam)</option>
+                        <option>Sesi 3 (Pagi)</option>
+                        <option>Sesi FGD</option>
+                    </select>
+                </div>
+                <div id="unabsent-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+            </section>
+
+            <!-- TAB: AKUN (ADMIN ONLY) -->
+            <section id="tab-accounts" class="tab-panel hidden max-w-2xl mx-auto space-y-6">
+                <div class="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+                    <h3 class="text-xl font-bold text-slate-900 mb-6">Tambah Akun Baru</h3>
+                    <form id="account-form" class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <input type="text" id="acc-name" placeholder="Nama Lengkap" required class="col-span-2 w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500">
+                            <input type="text" id="acc-user" placeholder="Username" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500">
+                            <input type="password" id="acc-pass" placeholder="Password" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-emerald-500">
+                        </div>
+                        <select id="acc-role" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none">
+                            <option>Petugas</option>
+                            <option>Administrator</option>
+                        </select>
+                        <button type="submit" class="w-full bg-slate-900 text-white font-bold py-3 rounded-xl hover:bg-black transition">Simpan Akun</button>
+                    </form>
+                </div>
+                <div class="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 text-slate-500 font-bold uppercase text-[10px]">
+                            <tr><th class="px-6 py-3">Nama</th><th class="px-6 py-3">Username</th><th class="px-6 py-3">Role</th></tr>
+                        </thead>
+                        <tbody id="acc-list" class="divide-y divide-slate-50"></tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- PUBLIC VIEW (WORDPRESS STYLE) -->
+    <div id="wp-view" class="fixed inset-0 z-[60] bg-white hidden overflow-y-auto">
+        <div class="max-w-4xl mx-auto p-6 md:p-12">
+            <div class="flex justify-between items-center mb-12 no-print">
+                <button onclick="app.closeWpView()" class="text-slate-400 font-bold">&larr; Tutup Tampilan</button>
+                <button onclick="window.print()" class="bg-blue-600 text-white px-6 py-2 rounded font-bold shadow-lg">Cetak Laporan</button>
+            </div>
+            <div class="text-center mb-12 border-b-2 border-slate-900 pb-8">
+                <h1 class="text-4xl font-extrabold text-slate-900 mb-2">DAFTAR PESERTA BELUM ABSEN</h1>
+                <p class="text-xl text-blue-600 font-bold" id="wp-sesi-title"></p>
+                <p class="text-slate-500 text-sm mt-4">Diperbarui pada: <span id="wp-timestamp"></span></p>
+            </div>
+            <div id="wp-content" class="grid grid-cols-1 md:grid-cols-2 gap-8"></div>
+        </div>
+    </div>
+
+    <script>
+        const app = {
+            state: {
+                user: null,
+                sesi: localStorage.getItem('last_sesi') || 'Sesi 1 (Registrasi)',
+                master: [
+                    { ID: 'P001', Nama: 'Ahmad Fauzi', Kelompok: 'Kelompok 01', Dapukan: 'Ketua' },
+                    { ID: 'P002', Nama: 'Siti Rahma', Kelompok: 'Kelompok 01', Dapukan: 'Sekretaris' },
+                    { ID: 'P003', Nama: 'Budi Santoso', Kelompok: 'Kelompok 02', Dapukan: 'Keamanan' },
+                    { ID: 'P004', Nama: 'Indah Kusuma', Kelompok: 'Kelompok 02', Dapukan: 'Konsumsi' },
+                    { ID: 'P005', Nama: 'Eko Prasetyo', Kelompok: 'Kelompok 03', Dapukan: 'Keamanan' }
+                ],
+                presensi: [],
+                accounts: [
+                    { Username: 'admin', Password: '123', Nama: 'Administrator', Role: 'Administrator' },
+                    { Username: 'petugas', Password: '123', Nama: 'Petugas Lapangan', Role: 'Petugas' }
+                ],
+                scanner: null,
+                charts: {}
+            },
+
+            init() {
+                document.getElementById('login-form').onsubmit = (e) => {
+                    e.preventDefault();
+                    this.login(document.getElementById('user').value, document.getElementById('pass').value);
+                };
+                document.getElementById('account-form').onsubmit = (e) => {
+                    e.preventDefault();
+                    this.saveAccount();
+                };
+                document.getElementById('active-sesi').value = this.state.sesi;
+            },
+
+            login(u, p) {
+                const acc = this.state.accounts.find(a => a.Username === u && a.Password === p);
+                if (acc) {
+                    this.state.user = acc;
+                    document.getElementById('login-screen').classList.add('hidden');
+                    document.getElementById('main-app').classList.remove('hidden');
+                    document.getElementById('name-label').innerText = acc.Nama;
+                    document.getElementById('role-label').innerText = acc.Role.toUpperCase();
+                    this.renderNav();
+                    this.switchTab('presence');
+                } else {
+                    Swal.fire('Gagal', 'Username/Password salah', 'error');
+                }
+            },
+
+            logout() { location.reload(); },
+
+            renderNav() {
+                const nav = document.getElementById('nav-menu');
+                const tabs = [
+                    { id: 'presence', label: 'Presensi', role: 'Petugas' },
+                    { id: 'recap', label: 'Rekap Data', role: 'Administrator' },
+                    { id: 'unabsent', label: 'Belum Absen', role: 'Petugas' },
+                    { id: 'accounts', label: 'Kelola Akun', role: 'Administrator' }
+                ];
+                nav.innerHTML = tabs
+                    .filter(t => this.state.user.Role === 'Administrator' || t.role === 'Petugas')
+                    .map(t => `<button onclick="app.switchTab('${t.id}')" id="nav-${t.id}" class="py-4 px-2 text-xs font-bold text-slate-400 whitespace-nowrap transition-all">${t.label}</button>`)
+                    .join('');
+            },
+
+            switchTab(id) {
+                document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+                document.querySelectorAll('#nav-menu button').forEach(b => b.classList.remove('nav-active', 'text-emerald-600'));
+                document.getElementById('tab-' + id).classList.remove('hidden');
+                document.getElementById('nav-' + id).classList.add('nav-active', 'text-emerald-600');
+                if (id === 'recap') this.renderRecap();
+                if (id === 'unabsent') this.renderUnabsent();
+                if (id === 'accounts') this.renderAccountList();
+            },
+
+            saveLastSesi() {
+                this.state.sesi = document.getElementById('active-sesi').value;
+                localStorage.setItem('last_sesi', this.state.sesi);
+                this.renderLog();
+            },
+
+            toggleScanner() {
+                const btn = document.getElementById('btn-camera');
+                if (!this.state.scanner) {
+                    this.state.scanner = new Html5Qrcode("reader");
+                    this.state.scanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, (txt) => this.process(txt));
+                    btn.innerText = "Matikan Kamera";
+                    btn.classList.replace('bg-emerald-600', 'bg-slate-500');
+                } else {
+                    this.state.scanner.stop().then(() => {
+                        this.state.scanner = null;
+                        document.getElementById('reader').innerHTML = '<span class="text-slate-400 text-sm">Scanner belum aktif</span>';
+                        btn.innerText = "Aktifkan Kamera";
+                        btn.classList.replace('bg-slate-500', 'bg-emerald-600');
+                    });
+                }
+            },
+
+            handleManual() {
+                const val = document.getElementById('manual-id').value;
+                if (val) { this.process(val); document.getElementById('manual-id').value = ''; }
+            },
+
+            process(id) {
+                const p = this.state.master.find(m => m.ID === id);
+                if (!p) return Swal.fire('Error', 'ID tidak terdaftar', 'error');
+                
+                const exists = this.state.presensi.find(item => item.ID === id && item.Sesi === this.state.sesi);
+                if (exists) return Swal.fire('Info', p.Nama + ' sudah absen di sesi ini', 'warning');
+
+                const record = { ...p, Sesi: this.state.sesi, Waktu: new Date().toLocaleTimeString('id-ID'), Petugas: this.state.user.Username, Status: 'Hadir' };
+                this.state.presensi.unshift(record);
+                this.renderLog();
+                
+                Swal.fire({
+                    title: 'Berhasil!',
+                    html: `<b>${p.Nama}</b><br><small>${p.Dapukan} - ${p.Kelompok}</small>`,
+                    icon: 'success',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            },
+
+            renderLog() {
+                const body = document.getElementById('log-body');
+                const filtered = this.state.presensi.filter(p => p.Sesi === this.state.sesi);
+                body.innerHTML = filtered.slice(0, 10).map(p => `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="px-6 py-4 font-bold text-slate-900">${p.Nama}</td>
+                        <td class="px-6 py-4 font-mono text-slate-400">${p.ID}</td>
+                        <td class="px-6 py-4 text-[10px]"><span class="bg-blue-50 text-blue-600 px-2 py-0.5 rounded">${p.Sesi}</span></td>
+                        <td class="px-6 py-4 text-slate-500">${p.Waktu}</td>
+                        <td class="px-6 py-4 italic text-slate-400">${p.Petugas}</td>
+                    </tr>
+                `).join('');
+            },
+
+            renderRecap() {
+                const dapukans = [...new Set(this.state.master.map(m => m.Dapukan))];
+                const grid = document.getElementById('recap-grid');
+                
+                grid.innerHTML = dapukans.map(d => {
+                    const members = this.state.master.filter(m => m.Dapukan === d);
+                    return `
+                        <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                            <h4 class="font-bold text-emerald-600 mb-4 flex justify-between">
+                                <span>Dapukan: ${d}</span>
+                                <span class="bg-emerald-50 px-2 py-0.5 rounded text-[10px]">${members.length} Orang</span>
+                            </h4>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-[11px]">
+                                    <thead class="text-slate-400 border-b"><tr><th class="pb-2">Nama</th><th class="pb-2">Rekap</th><th class="pb-2">Sesi Terakhir</th></tr></thead>
+                                    <tbody class="divide-y divide-slate-50">
+                                        ${members.map(m => {
+                                            const history = this.state.presensi.filter(p => p.ID === m.ID);
+                                            return `<tr><td class="py-2 font-semibold">${m.Nama}</td><td class="py-2 font-bold text-emerald-600">${history.length}x</td><td class="py-2 text-slate-400">${history[0]?.Sesi || '-'}</td></tr>`;
+                                        }).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                this.initCharts();
+            },
+
+            renderUnabsent() {
+                const sesi = document.getElementById('unabsent-sesi').value;
+                const grid = document.getElementById('unabsent-grid');
+                const presentIds = this.state.presensi.filter(p => p.Sesi === sesi).map(p => p.ID);
+                const unabsent = this.state.master.filter(m => !presentIds.includes(m.ID));
+                const dapukans = [...new Set(unabsent.map(m => m.Dapukan))];
+
+                document.getElementById('unabsent-count').innerText = `Total: ${unabsent.length} Orang`;
+                grid.innerHTML = dapukans.map(d => {
+                    const members = unabsent.filter(m => m.Dapukan === d);
+                    return `
+                        <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                            <h4 class="font-bold text-slate-800 mb-4 flex justify-between"><span>${d}</span> <span class="text-rose-500 text-[10px]">${members.length} Belum</span></h4>
+                            <div class="space-y-3">
+                                ${members.map(m => `
+                                    <div class="flex items-center justify-between p-2 bg-slate-50 rounded-lg">
+                                        <div class="text-[11px]"><p class="font-bold">${m.Nama}</p><p class="text-slate-400">${m.Kelompok}</p></div>
+                                        <div class="flex gap-1">
+                                            <button onclick="app.quickAction('${m.ID}', '${sesi}', 'Hadir')" class="bg-emerald-500 text-white text-[9px] font-bold px-2 py-1 rounded">Hadir</button>
+                                            <button onclick="app.quickAction('${m.ID}', '${sesi}', 'Izin')" class="bg-amber-500 text-white text-[9px] font-bold px-2 py-1 rounded">Izin</button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            },
+
+            quickAction(id, sesi, status) {
+                const p = this.state.master.find(m => m.ID === id);
+                this.state.presensi.unshift({ ...p, Sesi: sesi, Waktu: new Date().toLocaleTimeString('id-ID'), Petugas: this.state.user.Username, Status: status });
+                this.renderUnabsent();
+                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: `${p.Nama}: ${status}`, showConfirmButton: false, timer: 1500 });
+            },
+
+            initCharts() {
+                const ctxPie = document.getElementById('chart-pie').getContext('2d');
+                const ctxBar = document.getElementById('chart-bar').getContext('2d');
+                if (this.state.charts.pie) this.state.charts.pie.destroy();
+                if (this.state.charts.bar) this.state.charts.bar.destroy();
+
+                const present = this.state.presensi.filter(p => p.Sesi === this.state.sesi).length;
+                const total = this.state.master.length;
+
+                this.state.charts.pie = new Chart(ctxPie, {
+                    type: 'doughnut',
+                    data: { labels: ['Hadir', 'Belum'], datasets: [{ data: [present, total - present], backgroundColor: ['#10b981', '#f1f5f9'], borderWidth: 0 }] },
+                    options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+                });
+
+                const dapukans = [...new Set(this.state.master.map(m => m.Dapukan))];
+                this.state.charts.bar = new Chart(ctxBar, {
+                    type: 'bar',
+                    data: { 
+                        labels: dapukans, 
+                        datasets: [{ 
+                            label: 'Kehadiran', 
+                            data: dapukans.map(d => this.state.presensi.filter(p => p.Dapukan === d && p.Sesi === this.state.sesi).length),
+                            backgroundColor: '#3b82f6', borderRadius: 8
+                        }] 
+                    },
+                    options: { maintainAspectRatio: false, scales: { y: { beginAtZero: true, grid: { display: false } } } }
+                });
+            },
+
+            renderAccountList() {
+                document.getElementById('acc-list').innerHTML = this.state.accounts.map(a => `
+                    <tr class="text-xs">
+                        <td class="px-6 py-4 font-bold">${a.Nama}</td>
+                        <td class="px-6 py-4 text-slate-400">${a.Username}</td>
+                        <td class="px-6 py-4"><span class="px-2 py-0.5 rounded ${a.Role === 'Administrator' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50 text-slate-500'} font-bold">${a.Role}</span></td>
+                    </tr>
+                `).join('');
+            },
+
+            saveAccount() {
+                const n = document.getElementById('acc-name').value;
+                const u = document.getElementById('acc-user').value;
+                const p = document.getElementById('acc-pass').value;
+                const r = document.getElementById('acc-role').value;
+                this.state.accounts.push({ Nama: n, Username: u, Password: p, Role: r });
+                this.renderAccountList();
+                document.getElementById('account-form').reset();
+                Swal.fire('Berhasil', 'Akun ditambahkan', 'success');
+            },
+
+            openWpView() {
+                const sesi = this.state.sesi;
+                const presentIds = this.state.presensi.filter(p => p.Sesi === sesi).map(p => p.ID);
+                const unabsent = this.state.master.filter(m => !presentIds.includes(m.ID));
+                const dapukans = [...new Set(unabsent.map(m => m.Dapukan))];
+
+                document.getElementById('wp-sesi-title').innerText = sesi;
+                document.getElementById('wp-timestamp').innerText = new Date().toLocaleString('id-ID');
+                document.getElementById('wp-content').innerHTML = dapukans.map(d => {
+                    const members = unabsent.filter(m => m.Dapukan === d);
+                    return `
+                        <div class="border-t-4 border-slate-900 pt-4">
+                            <h3 class="font-black text-2xl uppercase mb-4">${d}</h3>
+                            <ul class="space-y-2 text-lg">
+                                ${members.map((m, i) => `<li class="border-b border-slate-100 pb-2">${i+1}. <b>${m.Nama}</b> <span class="text-slate-400">(${m.Kelompok})</span></li>`).join('')}
+                            </ul>
+                        </div>
+                    `;
+                }).join('');
+                document.getElementById('wp-view').classList.remove('hidden');
+            },
+
+            closeWpView() { document.getElementById('wp-view').classList.add('hidden'); }
+        };
+
+        app.init();
+    </script>
 </body>
 </html>
