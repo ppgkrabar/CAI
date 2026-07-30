@@ -4,7 +4,7 @@ let state = {
     currentUser: null, // { username, nama, role }
     activeTab: 'presensi',
     selectedSesi: localStorage.getItem('last_selected_sesi') || DEFAULT_SESI,
-    apiUrl: 'https://script.google.com/macros/s/AKfycbw02eGYX4tF563s5pTvZ8YGEKduDv8r05PvzEnbyzldxvUYOHEmiBwNkHkXItbHLiZx/exec',
+    apiUrl: localStorage.getItem('gas_api_url') || 'https://script.google.com/macros/s/AKfycbw02eGYX4tF563s5pTvZ8YGEKduDv8r05PvzEnbyzldxvUYOHEmiBwNkHkXItbHLiZx/exec',
     html5QrcodeScanner: null,
     // DEMO INITIAL DATA (Bisa langsung diuji coba sebelum koneksi API)
     dataMaster: [
@@ -227,11 +227,7 @@ function processPresensi(scannedId) {
         return;
     }
 
-    // const alreadyIn = state.dataPresensi.some(p => p.ID === participant.ID && p.Sesi === state.selectedSesi && p.Status === 'Hadir' );
-
-    // const alreadyIn = state.dataPresensi.some(p => p.ID === participant.ID && p.Sesi === state.selectedSesi && p.Status <> '' );
-    
-    const alreadyIn = state.dataPresensi.some(p => p.ID === participant.ID && p.Sesi === state.selectedSesi && p.Status === 'Hadir' || 'Izin' );
+    const alreadyIn = state.dataPresensi.some(p => p.ID === participant.ID && p.Sesi === state.selectedSesi && p.Status === 'Hadir');
 
     if (alreadyIn) {
         Swal.fire({
